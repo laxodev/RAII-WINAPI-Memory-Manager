@@ -15,8 +15,8 @@ Construct and obtain handle by process_name.
 		std::cout << "Exception thrown! " << e.what() << std::endl;
 		std::cout << "winapi error_code " << e.code() << std::endl;
 	} 
-}
-```
+
+}```
 ```
 
 Construct and obtain handle by window_name.
