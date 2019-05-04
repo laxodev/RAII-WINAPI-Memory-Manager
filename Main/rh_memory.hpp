@@ -59,7 +59,7 @@ namespace win_raii
 			std::optional<std::uint32_t> process_id = this->AcquireProcessID(process_name);
 
 			if (!this->AcquireProcessHandle(process_id.value(), processFlags))
-				throw std::system_error(GetLastError(), std::generic_category(), "Failed to open a handle to the specified process. An error code has been returned");
+				throw std::system_error(GetLastError(), std::system_category(), "Failed to open a handle to the specified process. An error code has been returned");
 
 			this->m_processID = process_id.value();
 		}
@@ -70,7 +70,7 @@ namespace win_raii
 			std::optional<std::uint32_t> process_id = this->AcquireProcessIDByWindowName(window_name);
 
 			if (!this->AcquireProcessHandle(process_id.value(), processFlags))
-				throw std::system_error(GetLastError(), std::generic_category(), "Failed to open a handle to the specified process. An error code has been returned");
+				throw std::system_error(GetLastError(), std::system_category, "Failed to open a handle to the specified process. An error code has been returned");
 
 			this->m_processID = process_id.value();
 		}
@@ -78,7 +78,7 @@ namespace win_raii
 		explicit SafeMemory(const std::optional<std::uint32_t>& process_id, const SafeMemory_Access processFlags, ConstructProcessID) noexcept(false)
 		{
 			if (!this->AcquireProcessHandle(process_id, processFlags))
-				throw std::system_error(GetLastError(), std::generic_category(), "Failed to open a handle to the specified process. An error code has been returned");
+				throw std::system_error(GetLastError(), std::system_category(), "Failed to open a handle to the specified process. An error code has been returned");
 
 			this->m_processID = process_id.value();
 		}
