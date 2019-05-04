@@ -58,7 +58,7 @@ namespace win_raii
 			// Acquire the handle in the constructor.
 			std::optional<std::uint32_t> process_id = this->AcquireProcessID(process_name);
 
-			if (!this->AcquireProcessHandle(process_id.value()a, processFlags))
+			if (!this->AcquireProcessHandle(process_id.value(), processFlags))
 				throw std::system_error(GetLastError(), std::generic_category(), "Failed to open a handle to the specified process. An error code has been returned");
 
 			this->m_processID = process_id.value();
