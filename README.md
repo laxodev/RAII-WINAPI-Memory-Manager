@@ -8,7 +8,7 @@ Try/Catch handling should be performed during object construction. All three con
 Construct and obtain handle by process_name.
 ```
 
-	try {
+	```try {
 		win_raii::SafeMemory memorymanager("program.exe", win_raii::SafeMemory_Access::SafeMemory_AllAccess, win_raii::SafeMemory::ConstructProcessName{});
 	}
 	catch (const std::system_error& e) {
@@ -16,6 +16,7 @@ Construct and obtain handle by process_name.
 		std::cout << "winapi error_code " << e.code() << std::endl;
 	} 
 }
+```
 ```
 
 Construct and obtain handle by window_name.
