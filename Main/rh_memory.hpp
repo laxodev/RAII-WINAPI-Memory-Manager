@@ -19,7 +19,7 @@ namespace win_raii
 		struct HandleDisposer
 		{
 			// We do "using pointer = HANDLE" because a unique_ptr will check for a "pointer" type on our deleter struct. 
-			// This also allows us to pass "HANDLE" to our unique_ptr. If we didn't do this it will be the equivalent of HANDLE* which is "void**".
+			// This also allows us to pass "HANDLE" to our unique_ptr. If we didn't do this it will be the equivalent of HANDLE* which is "void**"
 			// We could pass a regular "void" which would end up as "void*" but it's much cleaner to use the typedef defined in the windows headers.
 			using pointer = HANDLE;
 
@@ -58,7 +58,7 @@ namespace win_raii
 			// Acquire the handle in the constructor.
 			std::optional<std::uint32_t> process_id = this->AcquireProcessID(process_name);
 
-			if (!process_id.has_value() || !this->AcquireProcessHandle(process_id.value(), processFlags))
+			if (!process_id.has_value() || !this->AcquireProcessHandle(process_id.value(), processFlags) || !SetHandleInformation(this->m_processHandle.get(), HANDLE_FLAG_PROTECT_FROM_CLOSE, HANDLE_FLAG_PROTECT_FROM_CLOSE))
 				throw std::system_error(GetLastError(), std::system_category(), "Failed to open a handle to the specified process. An error code has been returned");
 
 			this->m_processID = process_id.value();
@@ -69,7 +69,7 @@ namespace win_raii
 			// Acquire the handle in the constructor.
 			std::optional<std::uint32_t> process_id = this->AcquireProcessIDByWindowName(window_name);
 
-			if (!process_id.has_value() || !this->AcquireProcessHandle(process_id.value(), processFlags))
+			if (!process_id.has_value() || !this->AcquireProcessHandle(process_id.value(), processFlags) || !SetHandleInformation(this->m_processHandle.get(), HANDLE_FLAG_PROTECT_FROM_CLOSE, HANDLE_FLAG_PROTECT_FROM_CLOSE))
 				throw std::system_error(GetLastError(), std::system_category(), "Failed to open a handle to the specified process. An error code has been returned");
 
 			this->m_processID = process_id.value();
@@ -77,7 +77,7 @@ namespace win_raii
 		// Opens the handle based on the process-id passed to the constructor.
 		explicit SafeMemory(const std::uint32_t process_id, const SafeMemory_Access processFlags, ConstructProcessID) noexcept(false)
 		{
-			if (!process_id || !this->AcquireProcessHandle(process_id, processFlags))
+			if (!process_id || !this->AcquireProcessHandle(process_id, processFlags) || !SetHandleInformation(this->m_processHandle.get(), HANDLE_FLAG_PROTECT_FROM_CLOSE, HANDLE_FLAG_PROTECT_FROM_CLOSE))
 				throw std::system_error(GetLastError(), std::system_category(), "Failed to open a handle to the specified process. An error code has been returned");
 
 			this->m_processID = process_id;
@@ -88,7 +88,7 @@ namespace win_raii
 		// If it is intended for a function to take this object it should be passed by reference.
 		SafeMemory(const SafeMemory&) = delete;
 		SafeMemory& operator = (const SafeMemory&) = delete;
-		~SafeMemory() = default;
+		~SafeMemory() { SetHandleInformation(this->m_processHandle.get(), HANDLE_FLAG_PROTECT_FROM_CLOSE, NULL); }
 	private:
 		// Main handle that lives throughout until the object-lifetime is over.
 		win_raii::detail::unique_handle m_processHandle;
@@ -179,12 +179,9 @@ namespace win_raii
 		template<typename T>
 		std::optional<T> SafeReadMemory(const std::uintptr_t address_ptr) const noexcept(false)
 		{
-			if (!this->m_processHandle.has_value())
-				return std::nullopt;
-
 			std::optional<T> length;
 
-			if ((!ReadProcessMemory(this->m_processHandle.value().get(), reinterpret_cast<void*>(address_ptr), std::addressof(length), sizeof(length), 0))) {
+			if ((!ReadProcessMemory(this->m_processHandle.get(), reinterpret_cast<void*>(address_ptr), std::addressof(length), sizeof(length), 0))) {
 				return std::nullopt;
 			}
 			return length;
@@ -192,13 +189,7 @@ namespace win_raii
 		template<typename T>
 		bool SafeWriteMemory(const std::uintptr_t address_ptr, const T& length) const noexcept
 		{
-			if (!this->m_processHandle.has_value())
-				return false;
-
-			if ((!WriteProcessMemory(this->m_processHandle.value().get(), reinterpret_cast<void*>(address_ptr), &length, sizeof(length), 0))) {
-				return false;
-			}
-			return true;
+			return WriteProcessMemory(this->m_processHandle.get(), reinterpret_cast<void*>(address_ptr), std::addressof(length), sizeof(length), 0);
 		}
 	};
 }
