@@ -91,7 +91,7 @@ namespace win_raii
 		~SafeMemory() = default;
 	private:
 		// Main handle that lives throughout until the object-lifetime is over.
-		std::optional<win_raii::detail::unique_handle> m_processHandle;
+		win_raii::detail::unique_handle m_processHandle;
 		std::uint32_t m_processID = 0;
 	private:
 		// Acquires the process id by process-name.
@@ -133,10 +133,12 @@ namespace win_raii
 		// Opens the specified handle.
 		bool AcquireProcessHandle(const std::uint32_t process_id, const DWORD processFlags) noexcept
 		{
-			this->m_processHandle = CreateProcessHandle(process_id, processFlags);
+			std::optional<win_raii::detail::unique_handle> processhandle = CreateProcessHandle(process_id, processFlags);
 
-			if (!this->m_processHandle.has_value())
+			if (!processhandle.has_value())
 				return false;
+
+			this->m_processHandle = std::move(processhandle.value());
 
 			return true;
 		}
