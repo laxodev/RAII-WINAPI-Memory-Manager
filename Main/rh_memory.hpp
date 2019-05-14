@@ -75,12 +75,12 @@ namespace win_raii
 			this->m_processID = process_id.value();
 		}
 		// Opens the handle based on the process-id passed to the constructor.
-		explicit SafeMemory(const std::optional<std::uint32_t>& process_id, const SafeMemory_Access processFlags, ConstructProcessID) noexcept(false)
+		explicit SafeMemory(const std::uint32_t process_id, const SafeMemory_Access processFlags, ConstructProcessID) noexcept(false)
 		{
-			if (!process_id.has_value() || !this->AcquireProcessHandle(process_id, processFlags))
+			if (!process_id || !this->AcquireProcessHandle(process_id, processFlags))
 				throw std::system_error(GetLastError(), std::system_category(), "Failed to open a handle to the specified process. An error code has been returned");
 
-			this->m_processID = process_id.value();
+			this->m_processID = process_id;
 		}
 		// Disables the copy ctor and copy assignment operator to ensure no copy of the object is created.
 		// If a copy is made and the original one goes out of scope will be left with a invalid handle.
@@ -92,7 +92,7 @@ namespace win_raii
 	private:
 		// Main handle that lives throughout until the object-lifetime is over.
 		std::optional<win_raii::detail::unique_handle> m_processHandle;
-		std::optional<std::uint32_t> m_processID;
+		std::uint32_t m_processID = 0;
 	private:
 		// Acquires the process id by process-name.
 		inline std::optional<std::uint32_t> AcquireProcessID(std::string_view process_name) const noexcept
@@ -131,12 +131,9 @@ namespace win_raii
 			return temp_process_id;
 		}
 		// Opens the specified handle.
-		bool AcquireProcessHandle(const std::optional<std::uint32_t>& process_id, const DWORD processFlags) noexcept
+		bool AcquireProcessHandle(const std::uint32_t process_id, const DWORD processFlags) noexcept
 		{
-			if (!process_id.has_value())
-				return false;
-
-			this->m_processHandle = CreateProcessHandle(process_id.value(), processFlags);
+			this->m_processHandle = CreateProcessHandle(process_id, processFlags);
 
 			if (!this->m_processHandle.has_value())
 				return false;
@@ -157,12 +154,9 @@ namespace win_raii
 	public:
 		inline std::optional<std::uintptr_t> GetModuleBaseAddress(std::string_view module_name) const noexcept
 		{
-			if (!this->m_processID.has_value())
-				return std::nullopt;
-
 			MODULEENTRY32 moduleentry;
 
-			const win_raii::detail::unique_handle snapshot_handle(CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, this->m_processID.value()));
+			const win_raii::detail::unique_handle snapshot_handle(CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, this->m_processID));
 
 			if (snapshot_handle.get() == INVALID_HANDLE_VALUE)
 				return std::nullopt;
