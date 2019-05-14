@@ -19,7 +19,7 @@ namespace win_raii
 		struct HandleDisposer
 		{
 			// We do "using pointer = HANDLE" because a unique_ptr will check for a "pointer" type on our deleter struct. 
-			// This also allows us to pass "HANDLE" to our unique_ptr. If we didn't do this it will be the equivalent of HANDLE* which is "void**"
+			// This also allows us to pass "HANDLE" to our unique_ptr. If we didn't do this it will be the equivalent of HANDLE* which is "void**".
 			// We could pass a regular "void" which would end up as "void*" but it's much cleaner to use the typedef defined in the windows headers.
 			using pointer = HANDLE;
 
