@@ -64,7 +64,7 @@ namespace win_raii
 			this->m_processID = process_id.value();
 		}
 		// Acquires the process-id and opens the handle based on the window-name.
-		explicit SafeMemory(const std::string& window_name, const SafeMemory_Access processFlags, ConstructWindowName) noexcept(false)
+		explicit SafeMemory(const std::wstring& window_name, const SafeMemory_Access processFlags, ConstructWindowName) noexcept(false)
 		{
 			// Acquire the handle in the constructor.
 			std::optional<std::uint32_t> process_id = this->AcquireProcessIDByWindowName(window_name);
@@ -116,11 +116,11 @@ namespace win_raii
 		}
 		// Acquires the process id by the window-name.
 		// We cannot use "c_str" to return a null-terminated character array like we would with a regular std::string.
-		inline std::optional<std::uint32_t> AcquireProcessIDByWindowName(const std::string& window_name) const noexcept
+		inline std::optional<std::uint32_t> AcquireProcessIDByWindowName(const std::wstring& window_name) const noexcept
 		{
 			DWORD temp_process_id = 0;
 
-			const HWND window_handle(FindWindowA(0, window_name.c_str()));
+			const HWND window_handle(FindWindowW(0, window_name.c_str()));
 
 			if (window_handle == nullptr)
 				return std::nullopt;
