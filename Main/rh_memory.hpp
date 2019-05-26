@@ -53,7 +53,7 @@ namespace win_raii
 		struct ConstructWindowName {};
 		struct ConstructProcessID {};
 
-		explicit SafeMemory(std::string_view process_name, const SafeMemory_Access processFlags, ConstructProcessName) noexcept(false)
+		explicit SafeMemory(std::wstring_view process_name, const SafeMemory_Access processFlags, ConstructProcessName) noexcept(false)
 		{
 			// Acquire the handle in the constructor.
 			std::optional<std::uint32_t> process_id = this->AcquireProcessID(process_name);
@@ -95,19 +95,19 @@ namespace win_raii
 		std::uint32_t m_processID = 0;
 	private:
 		// Acquires the process id by process-name.
-		inline std::optional<std::uint32_t> AcquireProcessID(std::string_view process_name) const noexcept
+		inline std::optional<std::uint32_t> AcquireProcessID(std::wstring_view process_name) const noexcept
 		{
-			PROCESSENTRY32 processentry;
+			PROCESSENTRY32W processentry;
 			const win_raii::detail::unique_handle snapshot_handle(CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0));
 
 			if (snapshot_handle.get() == INVALID_HANDLE_VALUE)
 				return std::nullopt;
 
-			processentry.dwSize = sizeof(MODULEENTRY32);
+			processentry.dwSize = sizeof(PROCESSENTRY32W);
 
-			if (Process32First(snapshot_handle.get(), &processentry)) {
+			if (Process32FirstW(snapshot_handle.get(), &processentry)) {
 
-				while (Process32Next(snapshot_handle.get(), &processentry)) {
+				while (Process32NextW(snapshot_handle.get(), &processentry)) {
 					if (process_name == processentry.szExeFile)
 						return processentry.th32ProcessID;
 				}
@@ -154,20 +154,20 @@ namespace win_raii
 			return processhandle;
 		}
 	public:
-		inline std::optional<std::uintptr_t> GetModuleBaseAddress(std::string_view module_name) const noexcept
+		inline std::optional<std::uintptr_t> GetModuleBaseAddress(std::wstring_view module_name) const noexcept
 		{
-			MODULEENTRY32 moduleentry;
+			MODULEENTRY32W moduleentry;
 
 			const win_raii::detail::unique_handle snapshot_handle(CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, this->m_processID));
 
 			if (snapshot_handle.get() == INVALID_HANDLE_VALUE)
 				return std::nullopt;
 
-			moduleentry.dwSize = sizeof(MODULEENTRY32);
+			moduleentry.dwSize = sizeof(MODULEENTRY32W);
 
-			if (Module32First(snapshot_handle.get(), &moduleentry)) {
+			if (Module32FirstW(snapshot_handle.get(), &moduleentry)) {
 
-				while (Module32Next(snapshot_handle.get(), &moduleentry)) {
+				while (Module32NextW(snapshot_handle.get(), &moduleentry)) {
 					if (module_name == moduleentry.szModule)
 						return reinterpret_cast<std::uintptr_t>(moduleentry.modBaseAddr);
 				}
