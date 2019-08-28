@@ -146,12 +146,12 @@ namespace win_raii
 		std::optional<win_raii::detail::unique_handle> CreateProcessHandle(const std::uint32_t process_id, const DWORD processFlags) const noexcept
 		{
 			// Passes the ownership to the main handle.
-			const win_raii::detail::unique_handle processhandle(OpenProcess(processFlags, false, process_id));
+			win_raii::detail::unique_handle processhandle(OpenProcess(processFlags, false, process_id));
 
 			if (processhandle.get() == nullptr)
 				return std::nullopt;
 
-			return std::optional<win_raii::detail::unique_handle>(processhandle.get());
+			return std::optional<win_raii::detail::unique_handle>(std::move(processhandle));
 		}
 	public:
 		inline std::optional<std::uintptr_t> GetModuleBaseAddress(std::wstring_view module_name) const noexcept
