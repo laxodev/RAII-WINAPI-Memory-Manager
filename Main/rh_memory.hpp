@@ -189,7 +189,7 @@ namespace win_raii
 		template<typename T>
 		bool SafeWriteMemory(const std::uintptr_t address_ptr, const T& length) const noexcept
 		{
-			return WriteProcessMemory(this->m_processHandle.get(), reinterpret_cast<void*>(address_ptr), std::addressof(length), sizeof(length), 0);
+			return !!WriteProcessMemory(this->m_processHandle.get(), reinterpret_cast<void*>(address_ptr), std::addressof(length), sizeof(length), 0);
 		}
 	};
 }
