@@ -56,7 +56,7 @@ namespace win_raii
 		explicit SafeMemory(std::wstring_view process_name, const SafeMemory_Access processFlags, ConstructProcessName) noexcept(false)
 		{
 			// Acquire the handle in the constructor.
-			std::optional<std::uint32_t> process_id = this->AcquireProcessID(process_name);
+			const std::optional<std::uint32_t> process_id = this->AcquireProcessID(process_name);
 
 			if (!process_id.has_value() || !this->AcquireProcessHandle(process_id.value(), processFlags) || !SetHandleInformation(this->m_processHandle.get(), HANDLE_FLAG_PROTECT_FROM_CLOSE, HANDLE_FLAG_PROTECT_FROM_CLOSE))
 				throw std::system_error(GetLastError(), std::system_category(), "Failed to open a handle to the specified process. An error code has been returned");
@@ -67,7 +67,7 @@ namespace win_raii
 		explicit SafeMemory(const std::wstring& window_name, const SafeMemory_Access processFlags, ConstructWindowName) noexcept(false)
 		{
 			// Acquire the handle in the constructor.
-			std::optional<std::uint32_t> process_id = this->AcquireProcessIDByWindowName(window_name);
+			const std::optional<std::uint32_t> process_id = this->AcquireProcessIDByWindowName(window_name);
 
 			if (!process_id.has_value() || !this->AcquireProcessHandle(process_id.value(), processFlags) || !SetHandleInformation(this->m_processHandle.get(), HANDLE_FLAG_PROTECT_FROM_CLOSE, HANDLE_FLAG_PROTECT_FROM_CLOSE))
 				throw std::system_error(GetLastError(), std::system_category(), "Failed to open a handle to the specified process. An error code has been returned");
@@ -109,7 +109,7 @@ namespace win_raii
 
 				while (Process32NextW(snapshot_handle.get(), &processentry)) {
 					if (process_name == processentry.szExeFile)
-						return processentry.th32ProcessID;
+						return std::optional<std::uint32_t>(processentry.th32ProcessID);
 				}
 			}
 			return std::nullopt;
@@ -128,7 +128,7 @@ namespace win_raii
 			if (GetWindowThreadProcessId(window_handle, &temp_process_id) == 0)
 				return std::nullopt;
 
-			return temp_process_id;
+			return std::optional<std::uint32_t>(temp_process_id);
 		}
 		// Opens the specified handle.
 		bool AcquireProcessHandle(const std::uint32_t process_id, const DWORD processFlags) noexcept
@@ -146,12 +146,12 @@ namespace win_raii
 		std::optional<win_raii::detail::unique_handle> CreateProcessHandle(const std::uint32_t process_id, const DWORD processFlags) const noexcept
 		{
 			// Passes the ownership to the main handle.
-			win_raii::detail::unique_handle processhandle(OpenProcess(processFlags, false, process_id));
+			const win_raii::detail::unique_handle processhandle(OpenProcess(processFlags, false, process_id));
 
 			if (processhandle.get() == nullptr)
 				return std::nullopt;
 
-			return processhandle;
+			return std::optional<win_raii::detail::unique_handle>(processhandle.get());
 		}
 	public:
 		inline std::optional<std::uintptr_t> GetModuleBaseAddress(std::wstring_view module_name) const noexcept
@@ -162,14 +162,14 @@ namespace win_raii
 
 			if (snapshot_handle.get() == INVALID_HANDLE_VALUE)
 				return std::nullopt;
-
+			
 			moduleentry.dwSize = sizeof(MODULEENTRY32W);
 
 			if (Module32FirstW(snapshot_handle.get(), &moduleentry)) {
 
 				while (Module32NextW(snapshot_handle.get(), &moduleentry)) {
 					if (module_name == moduleentry.szModule)
-						return reinterpret_cast<std::uintptr_t>(moduleentry.modBaseAddr);
+						return std::optional<std::uintptr_t>(reinterpret_cast<std::uintptr_t>(moduleentry.modBaseAddr));
 				}
 			}
 			return std::nullopt;
