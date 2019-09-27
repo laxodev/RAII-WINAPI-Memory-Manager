@@ -28,7 +28,7 @@ namespace win_raii
 			void operator()(HANDLE handle) const
 			{
 				// we check for both INVALID_HANDLE_VALUE and NULL as not all winapi functions will return INVALID_HANDLE_VALUE.
-				if (handle != INVALID_HANDLE_VALUE || handle != nullptr)
+				if (handle != INVALID_HANDLE_VALUE && handle != nullptr)
 				{
 					CloseHandle(handle);
 				}
